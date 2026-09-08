@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Math Sprint</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f6fb;color:#18202a}
+.card{width:min(720px,94vw);background:white;border:1px solid #dfe3ea;border-radius:22px;
+padding:26px;box-shadow:0 12px 35px #00000012}
+.top{display:flex;justify-content:space-between;align-items:center;gap:15px}
+h1{margin:0;font-size:30px}.sub{color:#687384;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:24px 0 16px}
+.stat{background:#f6f7fa;border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:23px}.stat span{font-size:12px;color:#687384}
+.timer{height:11px;background:#e9edf3;border-radius:99px;overflow:hidden}
+.bar{height:100%;width:100%;background:#4f7cff;transition:width .1s linear}
+.question{text-align:center;padding:28px 8px}
+.mode{text-transform:uppercase;letter-spacing:.12em;font-size:13px;font-weight:700;color:#687384}
+.problem{font-size:clamp(44px,10vw,76px);font-weight:850;margin:12px 0 24px}
+form{display:flex;gap:10px;max-width:440px;margin:auto}
+input{flex:1;min-width:0;font-size:25px;text-align:center;padding:12px;border:1px solid #cfd5df;
+border-radius:12px;outline:none}button{font-size:16px;font-weight:750;padding:0 20px;min-height:50px;
+border:0;border-radius:12px;background:#4f7cff;color:white;cursor:pointer}
+.secondary{background:#f1f3f7;color:#18202a;border:1px solid #d8dde6}
+.message{height:28px;margin-top:14px;font-weight:750}
+.hidden{display:none}
+@media(max-width:520px){.card{padding:18px}.stats{grid-template-columns:repeat(2,1fr)}
+form{flex-direction:column}form button{width:100%}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <div><h1>⚡ Math Sprint</h1><div class="sub">Addition · Subtraction · Multiplication · Squares</div></div>
+    <button id="restart" class="secondary">Restart</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="score">0</b><span>Score</span></div>
+    <div class="stat"><b id="attempted">0</b><span>Attempted</span></div>
+    <div class="stat"><b id="accuracy">0%</b><span>Accuracy</span></div>
+    <div class="stat"><b id="streak">0</b><span>Streak</span></div>
+  </div>
+
+  <div class="timer"><div id="bar" class="bar"></div></div>
+
+  <section class="question">
+    <div id="mode" class="mode">Ready</div>
+    <div id="problem" class="problem">?</div>
+    <form id="form">
+      <input id="answer" type="number" inputmode="numeric" autocomplete="off" placeholder="Answer">
+      <button type="submit">Submit</button>
+    </form>
+    <div id="message" class="message"></div>
+    <button id="next" class="secondary hidden">Next question</button>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let score=0,attempted=0,correct=0,streak=0,current=0,timer=null,left=10,locked=false;
+
+function rand(n){return Math.floor(Math.random()*n)+1}
+function updateStats(){
+  $("score").textContent=score;
+  $("attempted").textContent=attempted;
+  $("accuracy").textContent=attempted?Math.round(correct/attempted*100)+"%":"0%";
+  $("streak").textContent=streak;
+}
+function startTimer(){
+  clearInterval(timer); left=10; $("bar").style.width="100%";
+  timer=setInterval(()=>{
+    left=Math.max(0,left-.1);
+    $("bar").style.width=(left*10)+"%";
+    if(left<=0){clearInterval(timer);finish(false,true)}
+  },100);
+}
+function newQuestion(){
+  locked=false; $("message").textContent=""; $("next").classList.add("hidden");
+  $("answer").disabled=false; $("answer").value="";
+  const type=rand(4);
+  if(type===1){
+    let a=rand(40),b=rand(40);
+    $("mode").textContent="Addition"; $("problem").textContent=`${a} + ${b} = ?`; current=a+b;
+  }else if(type===2){
+    let a=rand(40),b=rand(40); if(b>a)[a,b]=[b,a];
+    $("mode").textContent="Subtraction"; $("problem").textContent=`${a} − ${b} = ?`; current=a-b;
+  }else if(type===3){
+    const a=rand(40),b=rand(10);
+    $("mode").textContent="Multiplication"; $("problem").textContent=`${a} × ${b} = ?`; current=a*b;
+  }else{
+    const a=rand(40);
+    $("mode").textContent="Square"; $("problem").textContent=`${a}² = ?`; current=a*a;
+  }
+  startTimer(); setTimeout(()=>$("answer").focus(),50);
+}
+function finish(ok,timeout=false){
+  if(locked)return; locked=true; clearInterval(timer); attempted++;
+  if(ok){correct++;score++;streak++;$("message").textContent="✓ Correct!"}
+  else{streak=0;$("message").textContent=timeout?"⏰ Time! Answer: "+current:"✗ Answer: "+current}
+  updateStats(); $("answer").disabled=true; $("next").classList.remove("hidden");
+}
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(locked)return;
+  if($("answer").value.trim()===""){$("message").textContent="Enter an answer.";return}
+  finish(Number($("answer").value)===current);
+});
+$("next").onclick=newQuestion;
+$("restart").onclick=()=>{clearInterval(timer);score=attempted=correct=streak=0;updateStats();newQuestion()};
+updateStats(); newQuestion();
+</script>
+</body>
+</html>
